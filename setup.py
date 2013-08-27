@@ -1,20 +1,26 @@
 from setuptools import setup, find_packages
 setup(
-    name = "chef-solo-provisioner",
+    name = "aminatorplugins_chef",
     version = "0.1",
-    packages = ( 'aminatorplugins', ),
+    packages = find_packages(),
     namespace_packages = ( 'aminatorplugins', ),
 
-    # Project uses reStructuredText, so ensure that the docutils get
-    # installed or upgraded on the target machine
-    install_requires = [],
+    install_requires = ["aminator >= 1.2.161",],
 
-    package_data = { },
+    data_files = [
+        ('/etc/aminator/plugins', ['default_conf/aminatorplugins.provisioner.chef.yml']),
+    ],
+
+    entry_points = {
+       'aminator.plugins.provisioner': [
+           'chef = aminatorplugins.provisioner.chef:ChefProvisionerPlugin',
+       ],
+    },
 
     # metadata for upload to PyPI
     author = "Asbjorn Kjaer",
     author_email = "bunjiboys@bunjiboys.dk",
     description = "Chef Solo provisioner for Netflix's aminator",
-    license = "APACHE 2.0",
+    license = "Apache 2.0",
     keywords = "aminator plugin chef-solo chef solo",
 )
