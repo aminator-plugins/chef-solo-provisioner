@@ -5,8 +5,6 @@ setup(
     packages = find_packages(),
     namespace_packages = ( 'aminatorplugins', ),
 
-    install_requires = ["aminator >= 1.2.161",],
-
     data_files = [
         ('/etc/aminator/plugins', ['default_conf/aminatorplugins.provisioner.chef.yml']),
     ],
