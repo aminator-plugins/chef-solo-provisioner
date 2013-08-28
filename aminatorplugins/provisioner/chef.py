@@ -74,7 +74,7 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
         return default
 
 
-    def _refresh_package_metadata(self):
+    def _install_payload_and_chef(self):
         """
         Fetch the latest version of cookbooks and JSON node info
         """
@@ -111,6 +111,11 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
 
 
     def _provision_package(self):
+        result = self._install_payload_and_chef()
+        if not result.success:
+            log.critical('Failed to install chef-solo/payload: {0.std_err}'.format(result.result))
+            return False
+
         context = self._config.context
         config = self._config.plugins[self.full_name]
 
