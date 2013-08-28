@@ -19,15 +19,15 @@
 #
 
 """
-aminator.plugins.provisioner.chef
+aminatorplugins.provisioner.chef
 ================================
-basic chef provisioner
+basic chef solo provisioner
 """
 import logging
 import os
 from collections import namedtuple
 
-from aminator.plugins.provisioner.linux import BaseLinuxProvisionerPlugin
+from aminator.plugins.provisioner.base import BaseProvisionerPlugin
 from aminator.util.linux import command
 from aminator.util.linux import short_circuit_files, rewire_files
 from aminator.config import conf_action
@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 CommandResult = namedtuple('CommandResult', 'success result')
 CommandOutput = namedtuple('CommandOutput', 'std_out std_err')
 
-class ChefProvisionerPlugin(BaseLinuxProvisionerPlugin):
+class ChefProvisionerPlugin(BaseProvisionerPlugin):
     """
     ChefProvisionerPlugin takes the majority of its behavior from BaseLinuxProvisionerPlugin
     See BaseLinuxProvisionerPlugin for details
