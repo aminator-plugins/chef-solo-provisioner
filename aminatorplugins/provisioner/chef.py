@@ -25,6 +25,8 @@ basic chef solo provisioner
 """
 import logging
 import os
+import shutil
+import re
 from collections import namedtuple
 
 from aminator.plugins.provisioner.base import BaseProvisionerPlugin
@@ -45,6 +47,7 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
     _default_chef_version = '10.26.0'
     _default_omnibus_url = 'https://www.opscode.com/chef/install.sh'
 
+    # class constants
     def add_plugin_args(self):
         context = self._config.context
         chef_config = self._parser.add_argument_group(title='Chef Solo Options', description='Options for the chef solo provisioner')
@@ -151,6 +154,10 @@ def chef_solo(runlist):
 
 @command()
 def fetch_chef_payload(payload_url):
-    curl_download(payload_url, '/tmp/chef_payload.tar.gz')
 
-    return 'tar -C /tmp -xf /tmp/chef_payload.tar.gz'.format(payload_url)
+    if payload_url.startswith("http", re.I):
+        curl_download(payload_url, '/tmp/chef_payload.tar.gz')
+    else:
+        shutil.copytree(payload_url, '/tmp/chef_payload.tar.gz')
+
+    return 'tar -C /tmp -xf /tmp/chef_payload.tar.gz'
