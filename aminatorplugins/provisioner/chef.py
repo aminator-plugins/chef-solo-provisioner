@@ -158,6 +158,6 @@ def fetch_chef_payload(payload_url):
     if payload_url.startswith("http", re.I):
         curl_download(payload_url, '/tmp/chef_payload.tar.gz')
     else:
-        shutil.copytree(payload_url, '/tmp/chef_payload.tar.gz')
+        shutil.copy(payload_url, '/tmp/chef_payload.tar.gz')
 
     return 'tar -C /tmp -xf /tmp/chef_payload.tar.gz'
