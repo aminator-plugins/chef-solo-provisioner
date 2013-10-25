@@ -38,6 +38,7 @@ log = logging.getLogger(__name__)
 CommandResult = namedtuple('CommandResult', 'success result')
 CommandOutput = namedtuple('CommandOutput', 'std_out std_err')
 
+
 class ChefProvisionerPlugin(BaseProvisionerPlugin):
     """
     ChefProvisionerPlugin takes the majority of its behavior from BaseLinuxProvisionerPlugin
@@ -50,45 +51,47 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
     # class constants
     def add_plugin_args(self):
         context = self._config.context
-        chef_config = self._parser.add_argument_group(title='Chef Solo Options', description='Options for the chef solo provisioner')
+        chef_config = self._parser.add_argument_group(title='Chef Solo Options',
+                                                      description='Options for the chef solo provisioner')
 
-        chef_config.add_argument('-R', '--runlist', dest='runlist', help='Chef run list items. If not set, run list should be specified in the node JSON file',
+        chef_config.add_argument('-R', '--runlist', dest='runlist',
+                                 help='Chef run list items. If not set, run list should be specified in the node JSON file',
                                  action=conf_action(self._config.plugins[self.full_name]))
-        chef_config.add_argument('--payload-url', dest='payload_url', help='Location to fetch the payload from (required)',
+        chef_config.add_argument('--payload-url', dest='payload_url',
+                                 help='Location to fetch the payload from (required)',
                                  action=conf_action(self._config.plugins[self.full_name]))
         chef_config.add_argument('--payload-version', dest='payload_version', help='Payload version (default: 0.0.1)',
                                  action=conf_action(self._config.plugins[self.full_name]))
         chef_config.add_argument('--payload-release', dest='payload_release', help='Payload release (default: 0)',
                                  action=conf_action(self._config.plugins[self.full_name]))
-        chef_config.add_argument('--chef-version', dest='chef_version', help='Version of chef to install (default: %s)' % self._default_chef_version,
+        chef_config.add_argument('--chef-version', dest='chef_version',
+                                 help='Version of chef to install (default: %s)' % self._default_chef_version,
                                  action=conf_action(self._config.plugins[self.full_name]))
-        chef_config.add_argument('--omnibus-url', dest='omnibus_url', help='Path to the omnibus install script (default: %s)' % self._default_omnibus_url,
+        chef_config.add_argument('--omnibus-url', dest='omnibus_url',
+                                 help='Path to the omnibus install script (default: %s)' % self._default_omnibus_url,
                                  action=conf_action(self._config.plugins[self.full_name]))
-        
 
     def get_config_value(self, name, default):
         config = self._config.plugins[self.full_name]
 
         if config.get(name):
             return config.get(name)
-        
+
         self._config.plugins[self.full_name].__setattr__(name, default)
         return default
-
 
     def _install_payload_and_chef(self):
         """
         Fetch the latest version of cookbooks and JSON node info
         """
-        context         = self._config.context
-        config          = self._config.plugins[self.full_name]
+        context = self._config.context
+        config = self._config.plugins[self.full_name]
 
         # These required args, so no default values
-        runlist         = config.get('runlist')
+        runlist = config.get('runlist')
 
-
-        chef_version    = self.get_config_value('chef_version', self._default_chef_version)
-        omnibus_url     = self.get_config_value('omnibus_url', self._default_omnibus_url)
+        chef_version = self.get_config_value('chef_version', self._default_chef_version)
+        omnibus_url = self.get_config_value('omnibus_url', self._default_omnibus_url)
 
         if os.path.exists("/opt/chef/bin/chef-solo"):
             log.debug('Omnibus chef is already installed, skipping install')
@@ -111,30 +114,32 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
         log.debug('Running chef-solo for run list items: %s' % config.get('runlist'))
         return chef_solo(config.get('runlist'))
 
-
     def _store_package_metadata(self):
         context = self._config.context
         config = self._config.plugins[self.full_name]
 
-        context.package.attributes = { 'name': context.package.arg, 'version': config.get('payload_version'), 'release': config.get('payload_release') }
+        context.package.attributes = {'name': context.package.arg, 'version': config.get('payload_version'),
+                                      'release': config.get('payload_release')}
 
     def _pre_chroot_block(self):
-        '''
+        """
         Overrides _pre_chroot_block in BaseProvisionerPlugin
-        '''
-        payload_url     = self._config.get('payload_url')
+        """
+        payload_url = self._config.get('payload_url')
 
         # Fetch config values if provided, otherwise set them to their default values
         payload_version = self.get_config_value('payload_version', '0.0.1')
         payload_release = self.get_config_value('payload_release', '0')
         if not payload_url:
             log.critical('Missing required argument for chef provisioner: --payload-url')
-            return CommandResult(False, CommandOutput('', 'Missing required argument for chef provisioner: --payload-url'))
+            return CommandResult(False,
+                                 CommandOutput('', 'Missing required argument for chef provisioner: --payload-url'))
 
         result = fetch_chef_payload(payload_url, self._mountpoint)
         if not result.success:
             log.critical('Failed to install payload: {0.std_err}'.format(result.result))
-            return CommandResult(False, CommandOutput('', 'Missing required argument for chef provisioner: --payload-url'))
+            return CommandResult(False, CommandOutput('', 'Failed to install payload'))
+
 
 @command()
 def curl_download(src, dst):
@@ -158,8 +163,7 @@ def chef_solo(runlist):
 
 @command()
 def fetch_chef_payload(payload_url, dst=""):
-
-    if re.search("^http", payload_url ):
+    if re.search("^http", payload_url):
         log.debug('Downloading payload from %s' % payload_url)
         curl_download(payload_url, dst + '/tmp/chef_payload.tar.gz')
     else:
