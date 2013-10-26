@@ -125,6 +125,7 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
     def _pre_chroot_block(self):
         """
         Overrides _pre_chroot_block in BaseProvisionerPlugin
+        Known Bug: default provision command in superclass does not abort based on this function's return value
         """
         context = self._config.context
         config = self._config.plugins[self.full_name]
@@ -156,10 +157,11 @@ def install_omnibus_chef(chef_version, omnibus_url):
 @command()
 def chef_solo(runlist):
     # If run list is not specific, dont override it on the command line
+    # Known Bug: even if chef solo fails, this command is successful
     if runlist:
         return 'chef-solo -j /tmp/node.json -c /tmp/solo.rb -o {0}'.format(runlist)
     else:
-        return 'chef-solo -j /tmp/node.json -c /tmp/solo.rb'
+        return 'chef-solo -j /tmp/node.json -c /tmp/solo.rb'.format(runlist)
 
 
 @command()
