@@ -135,7 +135,7 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
             log.critical('Missing required argument for chef provisioner: --payload-url')
             return CommandResult(False,
                                  CommandOutput('', 'Missing required argument for chef provisioner: --payload-url'))
-        result = fetch_chef_payload(payload_url, self._mountpoint)
+        result = fetch_chef_payload(payload_url, self._distro._mountpoint)
         if not result.success:
             log.critical('Failed to install payload: {0.std_err}'.format(result.result))
             return CommandResult(False, CommandOutput('', 'Failed to install payload'))
@@ -170,4 +170,4 @@ def fetch_chef_payload(payload_url, dst=""):
         log.debug('Copying payload from %s' % payload_url)
         shutil.copy(payload_url, dst + '/tmp/chef_payload.tar.gz')
 
-    return 'tar -C /tmp -xf /tmp/chef_payload.tar.gz'
+    return 'tar -C /tmp -xf /tmp/chef_payload.tar.gz'.format(payload_url)
