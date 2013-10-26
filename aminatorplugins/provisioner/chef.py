@@ -167,7 +167,7 @@ def fetch_chef_payload(payload_url, dst=""):
         log.debug('Downloading payload from %s' % payload_url)
         curl_download(payload_url, dst + '/tmp/chef_payload.tar.gz')
     else:
-        log.debug('Copying payload from %s' % payload_url)
+        log.debug('Copying payload from %s to %s' % (payload_url, dst + '/tmp/chef_payload.tar.gz'))
         shutil.copy(payload_url, dst + '/tmp/chef_payload.tar.gz')
 
-    return 'tar -C /tmp -xf /tmp/chef_payload.tar.gz'.format(payload_url)
+    return 'tar -C {0}/tmp -xf {1}/tmp/chef_payload.tar.gz'.format(dst, dst)
