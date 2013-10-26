@@ -100,7 +100,8 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
             result = install_omnibus_chef(chef_version, omnibus_url)
             if not result.success:
                 log.critical('Failed to install chef')
-                return result
+            return result
+        return CommandResult(True, CommandOutput('', ''))
 
     def _provision_package(self):
         result = self._install_payload_and_chef()
