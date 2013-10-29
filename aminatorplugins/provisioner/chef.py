@@ -173,4 +173,4 @@ def fetch_chef_payload(payload_url, dst=""):
         log.debug('Copying payload from %s to %s' % (payload_url, dst + '/tmp/chef_payload.tar.gz'))
         shutil.copy(payload_url, dst + '/tmp/chef_payload.tar.gz')
 
-    return 'tar -C {0}/tmp -xf {1}/tmp/chef_payload.tar.gz'.format(dst, dst)
+    return 'tar -C {0}/tmp -xf {0}/tmp/chef_payload.tar.gz'.format(dst)
