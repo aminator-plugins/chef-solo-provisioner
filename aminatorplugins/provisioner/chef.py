@@ -161,7 +161,7 @@ def chef_solo(runlist):
     if runlist:
         return 'chef-solo -j /tmp/node.json -c /tmp/solo.rb -o {0}'.format(runlist)
     else:
-        return 'chef-solo -j /tmp/node.json -c /tmp/solo.rb'.format(runlist)
+        return 'chef-solo -j /tmp/node.json -c /tmp/solo.rb'
 
 
 @command()
