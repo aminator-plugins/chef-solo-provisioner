@@ -130,9 +130,7 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
         context = self._config.context
         config = self._config.plugins[self.full_name]
         payload_url = config.get('payload_url')
-        # Fetch config values if provided, otherwise set them to their default values
-        payload_version = self.get_config_value('payload_version', '0.0.1')
-        payload_release = self.get_config_value('payload_release', '0')
+
         if not payload_url:
             log.critical('Missing required argument for chef provisioner: --payload-url')
             return CommandResult(False,
