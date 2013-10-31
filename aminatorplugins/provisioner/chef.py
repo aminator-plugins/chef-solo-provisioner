@@ -52,8 +52,7 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
     # class constants
     def add_plugin_args(self):
         context = self._config.context
-        chef_config = self._parser.add_argument_group(title='Chef Solo Options',
-                                                      description='Options for the chef solo provisioner')
+        chef_config = self._parser.add_argument_group(title='Chef Solo Options', description='Options for the chef solo provisioner')
 
         chef_config.add_argument('-R', '--runlist', dest='runlist', help='Chef run list items. If not set, run list should be specified in the node JSON file',
                                  action=conf_action(self._config.plugins[self.full_name]))
@@ -156,8 +155,11 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
         context = self._config.context
         config = self._config.plugins[self.full_name]
 
-        context.package.attributes = {'name': context.package.arg, 'version': config.get('payload_version'),
-                                      'release': config.get('payload_release')}
+        context.package.attributes = {
+            'name': context.package.arg,
+            'version': config.get('payload_version'),
+            'release': config.get('payload_release')
+        }
 
     def _pre_chroot_block(self):
         """
