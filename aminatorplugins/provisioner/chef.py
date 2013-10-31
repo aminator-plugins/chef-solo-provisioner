@@ -25,6 +25,7 @@ basic chef solo provisioner
 """
 import logging
 import os
+import re
 from collections import namedtuple
 
 from aminator.plugins.provisioner.base import BaseProvisionerPlugin
@@ -43,7 +44,8 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
     """
     _name = 'chef'
     _default_chef_version = '10.26.0'
-    _default_omnibus_url = 'https://www.opscode.com/chef/install.sh'
+    _default_omnibus_url  = 'https://www.opscode.com/chef/install.sh'
+    _default_fetch_method = 'auto'
 
     def add_plugin_args(self):
         context = self._config.context
@@ -60,6 +62,14 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
         chef_config.add_argument('--chef-version', dest='chef_version', help='Version of chef to install (default: %s)' % self._default_chef_version,
                                  action=conf_action(self._config.plugins[self.full_name]))
         chef_config.add_argument('--omnibus-url', dest='omnibus_url', help='Path to the omnibus install script (default: %s)' % self._default_omnibus_url,
+                                 action=conf_action(self._config.plugins[self.full_name]))
+        chef_config.add_argument('--fetch-method', dest='fetch_method', help='Method to download payload data. (default: %s)' % self._default_fetch_method,
+                                 action=conf_action(self._config.plugins[self.full_name]), choices=['auto', 'http', 'git', 'local'])
+        chef_config.add_argument('-p', '--git-ssh-pubkey', dest='ssh_pubkey', help='Public key for Git SSH authentication',
+                                 action=conf_action(self._config.plugins[self.full_name]))
+        chef_config.add_argument('-P', '--git-ssh-privkey', dest='ssh_privkey', help='Private key for Git SSH authentication',
+                                 action=conf_action(self._config.plugins[self.full_name]))
+        chef_config.add_argument('--git-ssh-passphrase', dest='ssh_passphrase', help='Keypair passphrase for Git SSH authentication',
                                  action=conf_action(self._config.plugins[self.full_name]))
         
 
@@ -89,6 +99,10 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
         payload_release = self.get_config_value('payload_release', '0')
         chef_version    = self.get_config_value('chef_version', self._default_chef_version)
         omnibus_url     = self.get_config_value('omnibus_url', self._default_omnibus_url)
+        fetch_mode      = self.get_config_value('fetch_mode', self._default_fetch_mode)
+        pubkey          = self.get_config_value('ssh_pubkey', os.path.expanduser('~/.ssh/id_rsa.pub'))
+        privkey         = self.get_config_value('ssh_privkey', os.path.expanduser('~/.ssh/id_rsa'))
+        passphrase      = self.get_config_value('ssh_passphrase', None)
 
         if not payload_url:
             log.critical('Missing required argument for chef provisioner: --payload-url')
@@ -103,8 +117,20 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
                 log.critical('Failed to install chef')
                 return result
 
+        if fetch_mode == 'auto':
+            fetch_mode = detect_fetch_mode(payload_url)
+
+        if not fetch_mode:
+            log.critical('Unable to automatically determine the protocol to fetch payload from path. Please manually select a fetch mode')
+            return 
         log.debug('Downloading payload from %s' % payload_url)
-        payload_result = fetch_chef_payload(payload_url)
+
+        if fetch_mode == 'git':
+            payload_result = berks_fetch_cookbooks(payload_url, pubkey, privkey, passphrase)
+        elif fetch_mode == 'http':
+            payload_result = fetch_chef_payload_http(payload_url)
+        else:
+            log.critical('Unsupported fetch mode supplied to chef provisioner: %s' % fetch_mode)
 
         return payload_result
 
@@ -133,12 +159,10 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
 def curl_download(src, dst):
     return 'curl {0} -o {1}'.format(src, dst)
 
-
 @command()
 def install_omnibus_chef(chef_version, omnibus_url):
     curl_download(omnibus_url, '/tmp/install-chef.sh')
     return 'bash /tmp/install-chef.sh -v {0}'.format(chef_version)
-
 
 @command()
 def chef_solo(runlist):
@@ -148,9 +172,38 @@ def chef_solo(runlist):
     else:
         return 'chef-solo -j /tmp/node.json -c /tmp/solo.rb'
 
-
 @command()
-def fetch_chef_payload(payload_url):
+def fetch_chef_payload_http(payload_url):
     curl_download(payload_url, '/tmp/chef_payload.tar.gz')
 
     return 'tar -C /tmp -xf /tmp/chef_payload.tar.gz'.format(payload_url)
+
+@command()
+def berks_fetch_cookbooks(payload_path, pubkey, privkey, passphrase):
+    return 'berks install --path /tmp/cookbooks -b /tmp/Berksfile'
+
+def git_clone(repo, dst=None):
+    try:
+        import pygit2 as git
+    except ImportError as e:
+        raise Exception("Failed to load the git module.\nPlease install pygit2 from http://www.pygit2.org/")
+
+    if not dst:
+        dst = tempfile.mkdtemp()
+
+    try:
+        repo = git.clone_repository(remote, dst)
+        return repo.path.replace('/.git/', '')
+    except Exception as e:
+        raise Exception("Failed to clone repo: %s" % e.message)
+
+def detect_fetch_mode(path):
+    if path.lower().startswith('http')
+        return 'http'
+    elif path.lower().startswith('git://'):
+        return 'git'
+    else:
+        if os.path.exists(path):
+            return 'local'
+        else:
+            return None
