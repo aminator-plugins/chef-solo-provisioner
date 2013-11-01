@@ -109,15 +109,16 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
             log.debug('Installing omnibus chef-solo')
             result = install_omnibus_chef(chef_version, omnibus_url)
             if not result.success:
-                log.critical('Failed to install chef')
+
+                log.critical('Failed to install chef: %s', result.result.std_err)
                 return None
 
         if fetch_mode == 'auto':
             fetch_mode = detect_fetch_mode(payload_url)
 
         if not fetch_mode:
-            log.critical(("Unable to automatically determine the protocol to fetch payload from path."
-                          "Please manually select a fetch mode"))
+            log.critical("Unable to automatically determine the protocol to fetch payload from path.")
+            log.critical("Please manually select a fetch mode using --fetch-method")
             return None
 
         log.debug('Downloading payload from %s using %s' % (payload_url, fetch_mode))
@@ -125,8 +126,10 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
             repo = git_clone(payload_url, pubkey, privkey, passphrase)
             try:
                 map(lambda fn: shutil.copy(fn, '/tmp'), glob(os.path.join(repo, '*')))
-            except:
-                return CommandResult(False, CommandOutput('', 'Failed to copy files from git repo to /tmp'))
+            except Exception as e:
+                log.critical('Failed to copy files from git repo to /tmp')
+                log.critical(e)
+                return None
 
             payload_result = berks_fetch_cookbooks()
 
@@ -138,6 +141,7 @@ class ChefProvisionerPlugin(BaseProvisionerPlugin):
 
         else:
             log.critical('Unsupported fetch mode supplied to chef provisioner: %s' % fetch_mode)
+            return None
 
         return payload_result
 
