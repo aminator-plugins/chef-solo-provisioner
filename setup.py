@@ -3,7 +3,7 @@ setup(
     name = "aminatorplugins_chef",
     version = "0.1",
     packages = find_packages(),
-    namespace_packages = ( 'aminatorplugins', ),
+    namespace_packages = ( 'aminatorplugins', 'aminatorplugins.provisioner'),
 
     data_files = [
         ('/etc/aminator/plugins', ['default_conf/aminatorplugins.provisioner.chef.yml']),
